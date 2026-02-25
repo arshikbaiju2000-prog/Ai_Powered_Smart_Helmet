@@ -162,7 +162,7 @@ void bleTask(void* parameter) {
       prevBleConnected = true;
       alarmActive      = false;
       silenceAlarm();
-      digitalWrite(LED_PIN, HIGH);        // Solid ON = connected
+      digitalWrite(LED_PIN, LOW);        // Solid ON = connected
 
       pCharAlert->setValue("HELMET_CONNECTED");
       pCharAlert->notify();
@@ -172,7 +172,7 @@ void bleTask(void* parameter) {
     // Just disconnected
     if (!bleConnected && prevBleConnected) {
       prevBleConnected = false;
-      digitalWrite(LED_PIN, LOW);
+      digitalWrite(LED_PIN, HIGH);
 
       if (alarmArmed) {
         alarmActive   = true;

@@ -27,6 +27,7 @@
 #define PCLK_GPIO_NUM    13
 
 
+
 // ── WiFi Config (your original credentials) ────────────────
 #define CAM_SERVER_PORT  12345
 const char* cam_ssid     = "ESP32_CAM";

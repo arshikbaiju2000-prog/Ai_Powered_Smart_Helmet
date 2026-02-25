@@ -26,8 +26,8 @@
 #include <BLE2902.h>
 
 // ── Shared hardware pins (used by both modules) ────────────
-#define LED_PIN      2    // Built-in LED
-#define SPEAKER_PIN  25   // Passive buzzer / speaker
+#define LED_PIN      21    // Built-in LED
+#define SPEAKER_PIN  5   // Passive buzzer / speaker
 
 // ── FreeRTOS task handles (defined here, used across files) ─
 TaskHandle_t bleTaskHandle = NULL;
