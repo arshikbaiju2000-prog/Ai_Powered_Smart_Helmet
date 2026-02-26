@@ -11,6 +11,7 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -42,6 +43,7 @@ import java.io.OutputStreamWriter
 import java.net.Socket
 import java.util.UUID
 
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var imageUpdater: ImageUpdater
@@ -51,6 +53,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var incidentLogButton: Button
     private val otherViews = mutableListOf<View>()
     private lateinit var connectButton: Button
+
+    // ── SharedPreferences for saved BLE device ──
+    private lateinit var prefs: SharedPreferences
+    private val PREF_SAVED_BLE_ADDRESS = "saved_ble_address"
+    private val PREF_SAVED_BLE_NAME    = "saved_ble_name"
 
     // ── TCP for Wi-Fi camera / traffic violation images ──
     private var socket: Socket? = null
@@ -115,6 +122,43 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ════════════════════════════════════════════════════
+    //  Saved Device helpers
+    // ════════════════════════════════════════════════════
+
+    /** Persist the paired device address so we can auto-reconnect next launch. */
+    private fun saveDeviceAddress(address: String, name: String) {
+        prefs.edit()
+            .putString(PREF_SAVED_BLE_ADDRESS, address)
+            .putString(PREF_SAVED_BLE_NAME, name)
+            .apply()
+    }
+
+    /** Returns the saved BLE MAC address, or null if none saved. */
+    private fun getSavedDeviceAddress(): String? = prefs.getString(PREF_SAVED_BLE_ADDRESS, null)
+
+    /**
+     * Forget the paired device.
+     * Call this from your Forget button: forgetDevice()
+     */
+    fun forgetDevice() {
+        prefs.edit()
+            .remove(PREF_SAVED_BLE_ADDRESS)
+            .remove(PREF_SAVED_BLE_NAME)
+            .apply()
+
+        // Also disconnect if currently connected
+        if (isConnected || isBleConnected) {
+            performDisconnect()
+        }
+
+        Snackbar.make(
+            findViewById(R.id.main),
+            "Saved helmet forgotten. Tap Connect to pair again.",
+            Snackbar.LENGTH_SHORT
+        ).show()
+    }
+
+    // ════════════════════════════════════════════════════
     //  TCP image streaming
     // ════════════════════════════════════════════════════
 
@@ -128,17 +172,42 @@ class MainActivity : AppCompatActivity() {
                 output.flush()
 
                 while (isActive && isConnected) {
+                    Snackbar.make(
+                        findViewById(R.id.main),
+                        "Start streaming images",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
                     val imageBytes = readOneImageFromStream(inputStream) ?: break
+                    Snackbar.make(
+                        findViewById(R.id.main),
+                        "Received image bytes",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
                     val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                     val filename = "img_${System.currentTimeMillis()}.jpg"
                     val file = saveBitmapToFile(this@MainActivity, bitmap, filename)
+                    Snackbar.make(
+                        findViewById(R.id.main),
+                        "Image received in a file",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
 
                     synchronized(receivedImages) {
                         receivedImages.add(file)
                     }
                     runOnUiThread {
+                        Snackbar.make(
+                            findViewById(R.id.main),
+                            "Image receive Thread",
+                            Snackbar.LENGTH_SHORT
+                        ).show()
                         if (!isIncidentLogOpen) {
                             imageUpdater.addImage(file)
+                            Snackbar.make(
+                                findViewById(R.id.main),
+                                "Image received",
+                                Snackbar.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 }
@@ -183,7 +252,7 @@ class MainActivity : AppCompatActivity() {
                 connectButton.isEnabled = true
                 if (connected) {
                     isConnected = true
-                    connectButton.text = "Disconnect"
+                    connectButton.text = "Disconnect"   // ← button label updated
                     startReceivingImages(connectButton)
                 } else {
                     connectButton.text = "Connect"
@@ -207,6 +276,16 @@ class MainActivity : AppCompatActivity() {
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     isBleConnected = true
+
+                    // Save this device for future auto-reconnect
+                    val deviceName = if (ActivityCompat.checkSelfPermission(
+                            this@MainActivity,
+                            Manifest.permission.BLUETOOTH_CONNECT
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) gatt.device.name ?: ESP32_DEVICE_NAME else ESP32_DEVICE_NAME
+
+                    saveDeviceAddress(gatt.device.address, deviceName)
+
                     gatt.discoverServices()
                     runOnUiThread {
                         Snackbar.make(
@@ -216,22 +295,43 @@ class MainActivity : AppCompatActivity() {
                         ).show()
                         // ── BLE connected → now start TCP camera connection ──
                         startTcpConnection()
+
+                        // Start foreground service so BLE is monitored even in background
+                        val serviceIntent = Intent(this@MainActivity, HelmetMonitorService::class.java)
+                        serviceIntent.action = HelmetMonitorService.ACTION_START
+                        ContextCompat.startForegroundService(this@MainActivity, serviceIntent)
                     }
                 }
+
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     val wasConnected = isBleConnected
                     isBleConnected = false
                     cmdCharacteristic = null
                     bleGatt?.close()
                     bleGatt = null
+
                     if (wasConnected) {
                         runOnUiThread {
+                            connectButton.text = "Connect"
+                            connectButton.isEnabled = true
+
+                            // Stop TCP as well
+                            receiveJob?.cancel()
+                            socket?.close()
+                            socket = null
+                            isConnected = false
+
                             Snackbar.make(
                                 findViewById(R.id.main),
                                 "⚠️ Helmet disconnected! You may have left it behind.",
                                 Snackbar.LENGTH_LONG
                             ).show()
                         }
+
+                        // Tell the foreground service to fire the disconnect notification + sound
+                        val serviceIntent = Intent(this@MainActivity, HelmetMonitorService::class.java)
+                        serviceIntent.action = HelmetMonitorService.ACTION_ALERT_DISCONNECT
+                        ContextCompat.startForegroundService(this@MainActivity, serviceIntent)
                     }
                 }
             }
@@ -272,6 +372,10 @@ class MainActivity : AppCompatActivity() {
     //  BLE scan by name → connect GATT
     // ════════════════════════════════════════════════════
 
+    /**
+     * If we have a saved device address, connect directly without scanning.
+     * Otherwise fall back to scanning by device name.
+     */
     private fun startBluetoothConnection() {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val bluetoothAdapter = bluetoothManager.adapter ?: return
@@ -287,10 +391,34 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        // ── Try saved device first (no scan needed) ──
+        val savedAddress = getSavedDeviceAddress()
+        if (savedAddress != null) {
+            try {
+                val device = bluetoothAdapter.getRemoteDevice(savedAddress)
+                Snackbar.make(
+                    findViewById(R.id.main),
+                    "Reconnecting to saved helmet…",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+                bleGatt = device.connectGatt(this, false, gattCallback)
+                return
+            } catch (e: Exception) {
+                // Saved address invalid — fall through to scan
+            }
+        }
+
+        // ── No saved device — scan by name ──
         val scanner = bluetoothAdapter.bluetoothLeScanner
         val scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                if (result.device.name == ESP32_DEVICE_NAME) {
+                val name = if (ActivityCompat.checkSelfPermission(
+                        this@MainActivity,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) result.device.name else null
+
+                if (name == ESP32_DEVICE_NAME) {
                     scanner.stopScan(this)
                     bleGatt = result.device.connectGatt(
                         this@MainActivity,
@@ -325,6 +453,39 @@ class MainActivity : AppCompatActivity() {
             it.value = command.toByteArray()
             bleGatt?.writeCharacteristic(it)
         }
+    }
+
+    // ════════════════════════════════════════════════════
+    //  Shared disconnect logic (used by button + BLE drop)
+    // ════════════════════════════════════════════════════
+
+    private fun performDisconnect() {
+        receiveJob?.cancel()
+        receiveJob = null
+        socket?.close()
+        socket = null
+        isConnected = false
+
+        sendBleCommand("DISARM")
+        bleGatt?.disconnect()
+        bleGatt?.close()
+        bleGatt = null
+        cmdCharacteristic = null
+        isBleConnected = false
+
+        connectButton.text = "Connect"
+        connectButton.isEnabled = true
+
+        // Stop the foreground monitor service
+        val serviceIntent = Intent(this, HelmetMonitorService::class.java)
+        serviceIntent.action = HelmetMonitorService.ACTION_STOP
+        startService(serviceIntent)
+
+        Snackbar.make(
+            findViewById(R.id.main),
+            "Disconnected",
+            Snackbar.LENGTH_SHORT
+        ).show()
     }
 
     // ════════════════════════════════════════════════════
@@ -383,6 +544,8 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
+        prefs = getSharedPreferences("helmet_prefs", Context.MODE_PRIVATE)
+
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
@@ -405,36 +568,27 @@ class MainActivity : AppCompatActivity() {
         imageUpdater = ImageUpdater(this, recyclerView)
         imageUpdater.loadImages()
 
+        // ── Forget button — wire up your layout button here ──
+        // Replace R.id.buttonForget with whatever ID you gave it in your XML
+        // If the view doesn't exist yet it won't crash; just uncomment when ready:
+        //
+        // findViewById<Button>(R.id.buttonForget)?.setOnClickListener {
+        //     forgetDevice()
+        // }
+
         incidentLogButton.setOnClickListener {
-            val intent = android.content.Intent(this, IncidentLogActivity::class.java)
+            val intent = Intent(this, IncidentLogActivity::class.java)
             startActivity(intent)
         }
 
+        // ── Connect / Disconnect toggle ──
         connectButton.setOnClickListener {
-            val button = it as Button
-            if (!isConnected) {
-                // ── Step 1: Disable button and start BLE scan ──
-                // TCP will automatically start inside gattCallback once BLE connects
-                button.text = "Connecting..."
-                button.isEnabled = false
+            if (!isConnected && !isBleConnected) {
+                connectButton.text = "Connecting…"
+                connectButton.isEnabled = false
                 checkBluetoothPermissionAndConnect()
             } else {
-                // ── Disconnect both BLE and TCP ──
-                receiveJob?.cancel()
-                receiveJob = null
-                socket?.close()
-                socket = null
-                isConnected = false
-                button.text = "Connect"
-
-                sendBleCommand("DISARM")
-                bleGatt?.disconnect()
-                bleGatt?.close()
-                bleGatt = null
-                cmdCharacteristic = null
-                isBleConnected = false
-
-                Snackbar.make(findViewById(R.id.main), "Disconnected", Snackbar.LENGTH_SHORT).show()
+                performDisconnect()
             }
         }
 
