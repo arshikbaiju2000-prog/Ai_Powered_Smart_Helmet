@@ -514,6 +514,43 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkNotificationPermission() {
+        // Only Android 13 (API 33) and above needs this runtime permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permissionState = ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            )
+
+            // If we don't have permission, ask for it
+            if (permissionState != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    101 // This is a "Request Code" you define to identify this specific request
+                )
+            }
+        }
+    }
+
+    private fun checkBluetoothPermissionOnLaunch() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val missing = arrayOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ).filter {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+            if (missing.isNotEmpty()) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    missing.toTypedArray(),
+                    REQUEST_BLUETOOTH_PERMISSION
+                )
+            }
+        }
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -543,6 +580,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+
+        checkNotificationPermission()
+        checkBluetoothPermissionOnLaunch()
 
         prefs = getSharedPreferences("helmet_prefs", Context.MODE_PRIVATE)
 
