@@ -37,8 +37,11 @@ WiFiServer camServer(CAM_SERVER_PORT);
 WiFiClient camClient;
 
 // ── Camera initialisation (your original code) ─────────────
-static void setupCamera() {
+
   camera_config_t config;
+  
+static void setupCamera() {
+
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer   = LEDC_TIMER_0;
   config.pin_d0       = Y2_GPIO_NUM;
@@ -60,7 +63,6 @@ static void setupCamera() {
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
   config.frame_size   = FRAMESIZE_QXGA;  // 2048×1536
-  // ⚠️ If heap errors occur, reduce to FRAMESIZE_VGA
   config.jpeg_quality = 8;
   config.fb_count     = 1;
 
