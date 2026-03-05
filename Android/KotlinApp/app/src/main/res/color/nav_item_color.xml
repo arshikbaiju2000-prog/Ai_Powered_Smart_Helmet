@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/color/nav_item_color.xml -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Selected / active item -->
+    <item
+        android:color="#558888"
+        android:state_checked="true" />
+    <!-- Default unselected -->
+    <item android:color="#555555" />
+</selector>

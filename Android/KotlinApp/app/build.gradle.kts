@@ -45,4 +45,16 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    // ── Back4App / Parse ──────────────────────────────
+    implementation("com.github.parse-community.Parse-SDK-Android:parse:4.2.1")
+    implementation("com.github.parse-community.Parse-SDK-Android:parse:4.3.0")
+
+    // ── Coroutines (for polling logic) ────────────────
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+//
+//    // ── ViewModel + LiveData ──────────────────────────
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
 }

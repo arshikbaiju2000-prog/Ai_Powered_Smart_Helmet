@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/menu/nav_drawer_menu.xml  (create res/menu/ folder if it doesn't exist) -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Main items that mirror your existing screen buttons -->
+    <group android:id="@+id/grp_main">
+
+        <item
+            android:id="@+id/nav_home"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Home" />
+
+        <item
+            android:id="@+id/nav_ride_history"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Ride History" />
+
+        <item
+            android:id="@+id/nav_incident_log"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Incident Log" />
+
+        <item
+            android:id="@+id/nav_issue_status"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Issue Status" />
+
+        <item
+            android:id="@+id/nav_report_issue"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Report An Issue" />
+
+    </group>
+
+    <!-- Divider + Find My Device pinned at the bottom -->
+    <group android:id="@+id/grp_device">
+
+        <item
+            android:id="@+id/nav_find_my_device"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Find My Device" />
+
+    </group>
+
+</menu>

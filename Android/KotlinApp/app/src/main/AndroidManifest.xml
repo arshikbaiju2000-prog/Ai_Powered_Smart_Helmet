@@ -33,6 +33,7 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
+        android:name=".MyApplication"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -62,6 +63,12 @@
         <activity android:name=".RideHistoryActivity" />
         <activity android:name=".IssueStatusActivity" />
         <activity android:name=".ReportIssueActivity" />
+
+        <!-- ADD THIS if missing -->
+        <activity
+            android:name=".FindMyDeviceActivity"
+            android:label="Find My Device"
+            android:parentActivityName=".MainActivity" />
 
     </application>
 
