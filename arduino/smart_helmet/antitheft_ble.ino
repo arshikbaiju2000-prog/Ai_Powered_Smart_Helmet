@@ -102,6 +102,7 @@ class ServerCallbacks : public BLEServerCallbacks {
   void onDisconnect(BLEServer* s) {
     bleConnected = false;
     Serial.println("[BLE] ❌ Phone disconnected — anti-theft triggered!");
+    alarmActive   = true;
   }
 };
 

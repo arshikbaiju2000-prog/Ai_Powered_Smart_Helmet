@@ -32,10 +32,12 @@
 // ── FreeRTOS task handles (defined here, used across files) ─
 TaskHandle_t bleTaskHandle = NULL;
 TaskHandle_t camTaskHandle = NULL;
+TaskHandle_t gpsTaskHandle = NULL;
 
 // ── Forward declarations (implemented in their own .ino) ────
 void bleTask(void* parameter);    // defined in ble_antitheft.ino
 void cameraTask(void* parameter); // defined in camera_wifi.ino
+void gpsTask(void* parameter); // defined in gps_gsm.ino
 
 // ════════════════════════════════════════════════════════════
 void setup() {
@@ -71,9 +73,20 @@ void setup() {
     1               // Core 1
   );
 
+  xTaskCreatePinnedToCore(
+    gpsTask,
+    "GPS_Task",
+    4096,  // Stack size
+    NULL,
+    1,     // Priority
+    &gpsTaskHandle,
+    0      // Core 0 (Shared with BLE)
+  );
+
   Serial.println("[MAIN] BLE task → Core 0");
   Serial.println("[MAIN] Camera task → Core 1");
   Serial.println("[MAIN] Both running. loop() is idle.");
+  Serial.println("[MAIN] GPRS task → Core 0");
 }
 
 // ════════════════════════════════════════════════════════════
