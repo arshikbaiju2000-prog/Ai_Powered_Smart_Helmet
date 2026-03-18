@@ -1,4 +1,4 @@
-package com.example.testkotlinapp.models
+package com.example.testkotlinapp
 
 import com.parse.ParseClassName
 import com.parse.ParseGeoPoint

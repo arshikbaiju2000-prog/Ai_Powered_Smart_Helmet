@@ -1,20 +1,28 @@
 package com.example.testkotlinapp
+
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
+import com.parse.ParseUser
 
 class SplashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_splash)  // Link to splash screen layout
+        setContentView(R.layout.activity_splash)
 
-        // Handler to delay execution for 2 seconds (2000 ms)
-        Handler().postDelayed({
-            // After delay, start MainActivity
-            startActivity(Intent(this, MainActivity::class.java))
-            finish() // Close SplashActivity so user cannot return to it
+        Handler(Looper.getMainLooper()).postDelayed({
+            val currentUser = ParseUser.getCurrentUser()
+            if (currentUser != null) {
+                // User is logged in, go to MainActivity
+                startActivity(Intent(this, MainActivity::class.java))
+            } else {
+                // User not logged in, go to LoginActivity
+                startActivity(Intent(this, LoginActivity::class.java))
+            }
+            finish()
         }, 2000)
     }
 }
