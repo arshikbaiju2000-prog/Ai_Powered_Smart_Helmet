@@ -1,5 +1,6 @@
 package com.example.testkotlinapp
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
 import android.widget.Button
@@ -18,6 +19,7 @@ class SignupActivity : AppCompatActivity() {
         val etName = findViewById<EditText>(R.id.etName)
         val etEmail = findViewById<EditText>(R.id.etEmail)
         val etPhone = findViewById<EditText>(R.id.etPhone)
+        val etEmergencyContact = findViewById<EditText>(R.id.etEmergencyContact)
         val etPassword = findViewById<EditText>(R.id.etPassword)
         val etConfirmPassword = findViewById<EditText>(R.id.etConfirmPassword)
         val btnSignup = findViewById<Button>(R.id.btnSignup)
@@ -27,23 +29,30 @@ class SignupActivity : AppCompatActivity() {
             val name = etName.text.toString().trim()
             val email = etEmail.text.toString().trim()
             val phone = etPhone.text.toString().trim()
+            val emergency = etEmergencyContact.text.toString().trim()
             val password = etPassword.text.toString().trim()
             val confirmPassword = etConfirmPassword.text.toString().trim()
 
-            if (validateInput(name, email, phone, password, confirmPassword)) {
-                // Implicitly add India country code (+91)
+            if (validateInput(name, email, phone, emergency, password, confirmPassword)) {
                 val formattedPhone = "+91$phone"
+                val formattedEmergency = "+91$emergency"
                 
+                // We create the user but don't finish yet. 
+                // We will move to OTP first. 
+                // To keep it simple, we'll login the user and then verify.
                 val user = ParseUser()
                 user.username = email
                 user.setPassword(password)
                 user.email = email
                 user.put("fullName", name)
                 user.put("phoneNumber", formattedPhone)
+                user.put("emergencyContact", formattedEmergency)
 
                 user.signUpInBackground { e ->
                     if (e == null) {
-                        Toast.makeText(this, "Registration Successful", Toast.LENGTH_SHORT).show()
+                        // Registration successful, now MUST verify OTP
+                        val intent = Intent(this, OtpVerificationActivity::class.java)
+                        startActivity(intent)
                         finish()
                     } else {
                         Toast.makeText(this, "Registration Failed: ${e.message}", Toast.LENGTH_LONG).show()
@@ -57,8 +66,8 @@ class SignupActivity : AppCompatActivity() {
         }
     }
 
-    private fun validateInput(name: String, email: String, phone: String, pass: String, confirmPass: String): Boolean {
-        if (name.isEmpty() || email.isEmpty() || phone.isEmpty() || pass.isEmpty()) {
+    private fun validateInput(name: String, email: String, phone: String, emergency: String, pass: String, confirmPass: String): Boolean {
+        if (name.isEmpty() || email.isEmpty() || phone.isEmpty() || emergency.isEmpty() || pass.isEmpty()) {
             Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show()
             return false
         }
@@ -68,6 +77,14 @@ class SignupActivity : AppCompatActivity() {
         }
         if (phone.length != 10) {
             Toast.makeText(this, "Phone number must be 10 digits", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (emergency.length != 10) {
+            Toast.makeText(this, "Emergency contact must be 10 digits", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (phone == emergency) {
+            Toast.makeText(this, "Emergency contact cannot be your own number", Toast.LENGTH_SHORT).show()
             return false
         }
         if (pass.length < 6) {

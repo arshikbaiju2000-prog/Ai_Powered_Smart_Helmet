@@ -59,6 +59,10 @@
         <activity android:name=".SignupActivity" />
         <activity android:name=".OtpVerificationActivity" />
         <activity android:name=".ResetPasswordActivity" />
+        <activity android:name=".ProfileActivity" />
+        <activity android:name=".SettingsActivity" />
+        <activity android:name=".AppearanceActivity" />
+        <activity android:name=".PrivacyActivity" />
 
         <activity
             android:name=".MainActivity"

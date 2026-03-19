@@ -7,6 +7,10 @@
             android:icon="@drawable/ic_launcher_foreground"
             android:title="Home" />
         <item
+            android:id="@+id/nav_profile"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Profile" />
+        <item
             android:id="@+id/nav_ride_history"
             android:icon="@drawable/ic_launcher_foreground"
             android:title="Ride History" />
@@ -29,6 +33,13 @@
             android:id="@+id/nav_find_my_device"
             android:icon="@drawable/ic_launcher_foreground"
             android:title="Find My Device" />
+    </group>
+
+    <group android:id="@+id/grp_settings">
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Settings" />
     </group>
 
     <group android:id="@+id/grp_auth">

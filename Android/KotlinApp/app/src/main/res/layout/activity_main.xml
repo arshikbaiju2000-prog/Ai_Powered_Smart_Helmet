@@ -8,14 +8,10 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
-    <!-- ════════════════════════════════════════════════
-         MAIN CONTENT — your existing layout, untouched
-         ════════════════════════════════════════════════ -->
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- Toolbar with hamburger icon -->
         <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -30,11 +26,11 @@
 
         </com.google.android.material.appbar.AppBarLayout>
 
-        <!-- Your original ConstraintLayout shifted below toolbar -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/main"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="?android:attr/windowBackground"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
             tools:context=".MainActivity">
 
@@ -65,76 +61,14 @@
                 app:layout_constraintHorizontal_bias="0.497"
                 app:layout_constraintStart_toStartOf="parent" />
 
-<!--            <Button-->
-<!--                android:id="@+id/button2"-->
-<!--                android:layout_width="140dp"-->
-<!--                android:layout_height="60dp"-->
-<!--                android:layout_marginTop="40dp"-->
-<!--                android:layout_marginEnd="52dp"-->
-<!--                android:text="Ride History"-->
-<!--                app:layout_constraintEnd_toStartOf="@+id/button3"-->
-<!--                app:layout_constraintHorizontal_bias="1.0"-->
-<!--                app:layout_constraintLeft_toLeftOf="@+id/imageView"-->
-<!--                app:layout_constraintStart_toStartOf="parent"-->
-<!--                app:layout_constraintTop_toBottomOf="@+id/imageView"-->
-<!--                app:layout_goneMarginTop="10dp" />-->
-
-<!--            <Button-->
-<!--                android:id="@+id/button3"-->
-<!--                android:layout_width="140dp"-->
-<!--                android:layout_height="60dp"-->
-<!--                android:layout_marginTop="40dp"-->
-<!--                android:layout_marginEnd="40dp"-->
-<!--                android:text="Incident Log"-->
-<!--                app:layout_constraintEnd_toEndOf="parent"-->
-<!--                app:layout_constraintRight_toRightOf="@id/imageView"-->
-<!--                app:layout_constraintTop_toBottomOf="@+id/imageView" />-->
-
-<!--            <Button-->
-<!--                android:id="@+id/button4"-->
-<!--                android:layout_width="140dp"-->
-<!--                android:layout_height="60dp"-->
-<!--                android:layout_marginTop="40dp"-->
-<!--                android:layout_marginEnd="40dp"-->
-<!--                android:text="Issue Status"-->
-<!--                app:layout_constraintEnd_toStartOf="@+id/button5"-->
-<!--                app:layout_constraintHorizontal_bias="0.784"-->
-<!--                app:layout_constraintLeft_toLeftOf="@id/imageView"-->
-<!--                app:layout_constraintStart_toStartOf="parent"-->
-<!--                app:layout_constraintTop_toBottomOf="@+id/button2" />-->
-
-<!--            <Button-->
-<!--                android:id="@+id/button5"-->
-<!--                android:layout_width="140dp"-->
-<!--                android:layout_height="60dp"-->
-<!--                android:layout_marginTop="40dp"-->
-<!--                android:layout_marginEnd="40dp"-->
-<!--                android:text="Report An Issue"-->
-<!--                app:layout_constraintEnd_toEndOf="parent"-->
-<!--                app:layout_constraintRight_toRightOf="@id/imageView"-->
-<!--                app:layout_constraintTop_toBottomOf="@+id/button3" />-->
-
-<!--            <TextView-->
-<!--                android:id="@+id/textView2"-->
-<!--                android:layout_width="169dp"-->
-<!--                android:layout_height="36dp"-->
-<!--                android:layout_marginStart="40dp"-->
-<!--                android:layout_marginTop="16dp"-->
-<!--                android:text="Smart Helmet"-->
-<!--                android:textSize="20dp"-->
-<!--                android:textStyle="bold"-->
-<!--                app:layout_constraintBottom_toTopOf="@+id/imageView"-->
-<!--                app:layout_constraintStart_toStartOf="parent"-->
-<!--                app:layout_constraintTop_toTopOf="parent"-->
-<!--                app:layout_constraintVertical_bias="0.0" />-->
-
             <TextView
                 android:id="@+id/textView3"
                 android:layout_width="370dp"
-                android:layout_height="43dp"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="40dp"
-                android:text="AI Powered smart helmet program developed by students form CET Thiruvananthapuram"
+                android:text="AI Powered smart helmet program developed by students from CET Thiruvananthapuram"
                 android:textAlignment="center"
+                android:textColor="?android:attr/textColorSecondary"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.487"
@@ -145,8 +79,8 @@
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:visibility="gone"
-                app:layout_constraintTop_toBottomOf="@+id/button3"
-                app:layout_constraintBottom_toTopOf="@+id/button4"
+                app:layout_constraintTop_toBottomOf="@+id/imageView"
+                app:layout_constraintBottom_toTopOf="@+id/button"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
@@ -154,18 +88,16 @@
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    <!-- ════════════════════════════════════════════════
-         NAVIGATION DRAWER — slides in from the left
-         ════════════════════════════════════════════════ -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigationView"
         android:layout_width="280dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
+        android:background="?android:attr/windowBackground"
         app:headerLayout="@layout/nav_header"
         app:menu="@menu/nav_drawer_menu"
-        app:itemIconTint="@color/nav_item_color"
-        app:itemTextColor="@color/nav_item_color" />
+        app:itemIconTint="?android:attr/textColorPrimary"
+        app:itemTextColor="?android:attr/textColorPrimary" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

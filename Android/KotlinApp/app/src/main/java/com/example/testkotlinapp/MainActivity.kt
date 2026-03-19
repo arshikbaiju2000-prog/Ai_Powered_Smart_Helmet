@@ -25,6 +25,7 @@ import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -97,6 +98,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             finish()
             return
         }
+        
+        // Apply saved theme preference
+        val appPrefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val themeMode = appPrefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        AppCompatDelegate.setDefaultNightMode(themeMode)
+
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
         prefs = getSharedPreferences("helmet_prefs", Context.MODE_PRIVATE)
@@ -366,6 +373,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         when (i.itemId) {
             R.id.nav_ride_history -> startActivity(Intent(this, RideHistoryActivity::class.java))
             R.id.nav_incident_log -> startActivity(Intent(this, IncidentLogActivity::class.java))
+            R.id.nav_profile -> startActivity(Intent(this, ProfileActivity::class.java))
+            R.id.nav_settings -> startActivity(Intent(this, SettingsActivity::class.java))
             R.id.nav_logout -> { ParseUser.logOut(); if (isConnected || isBleConnected) performDisconnect(); val intent = Intent(this, LoginActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK }; startActivity(intent); finish() }
         }
         drawerLayout.closeDrawer(GravityCompat.START); return true
