@@ -26,16 +26,10 @@
             android:id="@+id/nav_report_issue"
             android:icon="@drawable/ic_launcher_foreground"
             android:title="Report An Issue" />
-    </group>
-
-    <group android:id="@+id/grp_device">
         <item
             android:id="@+id/nav_find_my_device"
             android:icon="@drawable/ic_launcher_foreground"
             android:title="Find My Device" />
-    </group>
-
-    <group android:id="@+id/grp_settings">
         <item
             android:id="@+id/nav_settings"
             android:icon="@drawable/ic_launcher_foreground"

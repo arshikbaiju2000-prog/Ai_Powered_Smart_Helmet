@@ -10,8 +10,10 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -86,6 +88,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private val REQUEST_ALL_PERMISSIONS = 1010
     private var isPermissionRequestPending = false
 
+    private val noiseCancelReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "com.example.testkotlinapp.NOISE_CANCEL_CHANGED") {
+                val enabled = intent.getBooleanExtra("enabled", false)
+                if (isBleConnected) {
+                    sendBleCommand(if (enabled) "ANC_ON" else "ANC_OFF")
+                }
+            }
+        }
+    }
+
     companion object {
         @Volatile
         var isIncidentLogOpen = false
@@ -138,6 +151,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 performDisconnect()
             }
         }
+
+        val filter = IntentFilter("com.example.testkotlinapp.NOISE_CANCEL_CHANGED")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(noiseCancelReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(noiseCancelReceiver, filter)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(noiseCancelReceiver)
     }
 
     private fun requestRequiredPermissions() {
@@ -230,6 +256,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             if (status != BluetoothGatt.GATT_SUCCESS) return
             val service = gatt.getService(SERVICE_UUID) ?: return
             cmdCharacteristic = service.getCharacteristic(CHAR_CMD_UUID)
+            
+            // Check if noise cancellation was already enabled in prefs and send command
+            val appPrefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            val noiseCancelEnabled = appPrefs.getBoolean("noise_cancellation", false)
+            if (noiseCancelEnabled) {
+                sendBleCommand("ANC_ON")
+            }
+
             val alertChar = service.getCharacteristic(CHAR_ALERT_UUID) ?: return
             if (ActivityCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
                 gatt.setCharacteristicNotification(alertChar, true)
@@ -375,6 +409,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.id.nav_incident_log -> startActivity(Intent(this, IncidentLogActivity::class.java))
             R.id.nav_profile -> startActivity(Intent(this, ProfileActivity::class.java))
             R.id.nav_settings -> startActivity(Intent(this, SettingsActivity::class.java))
+            R.id.nav_find_my_device -> startActivity(Intent(this, FindMyDeviceActivity::class.java))
+            R.id.nav_issue_status -> startActivity(Intent(this, IssueStatusActivity::class.java))
+            R.id.nav_report_issue -> startActivity(Intent(this, ReportIssueActivity::class.java))
             R.id.nav_logout -> { ParseUser.logOut(); if (isConnected || isBleConnected) performDisconnect(); val intent = Intent(this, LoginActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK }; startActivity(intent); finish() }
         }
         drawerLayout.closeDrawer(GravityCompat.START); return true

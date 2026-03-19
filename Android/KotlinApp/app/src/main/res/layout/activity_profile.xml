@@ -46,6 +46,13 @@
                 android:visibility="gone" />
         </RelativeLayout>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Full Name"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginBottom="4dp"/>
         <EditText
             android:id="@+id/etProfileName"
             android:layout_width="match_parent"
@@ -61,6 +68,13 @@
             android:enabled="false"/>
 
         <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Email Address"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginBottom="4dp"/>
+        <TextView
             android:id="@+id/tvProfileEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -70,6 +84,13 @@
             android:padding="12dp"
             android:textColor="?android:attr/textColorSecondary"/>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Phone Number"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginBottom="4dp"/>
         <EditText
             android:id="@+id/etProfilePhone"
             android:layout_width="match_parent"
@@ -84,6 +105,13 @@
             android:importantForAutofill="no"
             android:enabled="false"/>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Blood Group"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginBottom="4dp"/>
         <EditText
             android:id="@+id/etBloodGroup"
             android:layout_width="match_parent"
@@ -98,6 +126,13 @@
             android:importantForAutofill="no"
             android:enabled="false"/>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Emergency Contact"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginBottom="4dp"/>
         <EditText
             android:id="@+id/etEmergencyContact"
             android:layout_width="match_parent"

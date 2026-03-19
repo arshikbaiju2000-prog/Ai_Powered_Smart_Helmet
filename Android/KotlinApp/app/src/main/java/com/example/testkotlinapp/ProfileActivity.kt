@@ -1,20 +1,33 @@
 package com.example.testkotlinapp
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
 import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.parse.ParseFile
 import com.parse.ParseUser
 import com.parse.SaveCallback
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ProfileActivity : AppCompatActivity() {
 
@@ -29,6 +42,7 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var btnEditPhoto: ImageButton
 
     private var profileImageFile: ParseFile? = null
+    private var currentPhotoPath: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,13 +65,128 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         btnEditPhoto.setOnClickListener {
-            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-            resultLauncher.launch(intent)
+            showImageSourceDialog()
         }
 
         btnSave.setOnClickListener {
             saveUserData()
         }
+    }
+
+    private fun showImageSourceDialog() {
+        val options = arrayOf("Take Photo", "Choose from Gallery", "Cancel")
+        AlertDialog.Builder(this)
+            .setTitle("Profile Photo")
+            .setItems(options) { dialog, which ->
+                when (which) {
+                    0 -> checkCameraPermissionAndLaunch()
+                    1 -> {
+                        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                        galleryLauncher.launch(intent)
+                    }
+                    2 -> dialog.dismiss()
+                }
+            }
+            .show()
+    }
+
+    private fun checkCameraPermissionAndLaunch() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            launchCamera()
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            launchCamera()
+        } else {
+            Toast.makeText(this, "Camera permission is required to take photos", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun launchCamera() {
+        val photoFile: File? = try {
+            createImageFile()
+        } catch (ex: IOException) {
+            null
+        }
+        photoFile?.also {
+            val photoURI: Uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", it)
+            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+            }
+            cameraLauncher.launch(intent)
+        }
+    }
+
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir).apply {
+            currentPhotoPath = absolutePath
+        }
+    }
+
+    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            currentPhotoPath?.let { path ->
+                val bitmap = BitmapFactory.decodeFile(path)
+                val rotatedBitmap = rotateImageIfRequired(bitmap, path)
+                imgProfile.setImageBitmap(rotatedBitmap)
+                uploadImage(rotatedBitmap)
+            }
+        }
+    }
+
+    private val galleryLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val imageUri: Uri? = result.data?.data
+            if (imageUri != null) {
+                val inputStream = contentResolver.openInputStream(imageUri)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                
+                // For gallery images, we might need a different way to handle rotation if it occurs
+                val rotatedBitmap = rotateImageIfRequiredFromUri(bitmap, imageUri)
+                imgProfile.setImageBitmap(rotatedBitmap)
+                uploadImage(rotatedBitmap)
+            }
+        }
+    }
+
+    private fun rotateImageIfRequired(img: Bitmap, path: String): Bitmap {
+        val ei = ExifInterface(path)
+        val orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+
+        return when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> rotateImage(img, 90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> rotateImage(img, 180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> rotateImage(img, 270f)
+            else -> img
+        }
+    }
+
+    private fun rotateImageIfRequiredFromUri(img: Bitmap, uri: Uri): Bitmap {
+        val inputStream = contentResolver.openInputStream(uri) ?: return img
+        val ei = ExifInterface(inputStream)
+        val orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+
+        return when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> rotateImage(img, 90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> rotateImage(img, 180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> rotateImage(img, 270f)
+            else -> img
+        }
+    }
+
+    private fun rotateImage(img: Bitmap, degree: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(degree)
+        val rotatedImg = Bitmap.createBitmap(img, 0, 0, img.width, img.height, matrix, true)
+        img.recycle()
+        return rotatedImg
     }
 
     private fun toggleEditMode(enabled: Boolean) {
@@ -69,19 +198,6 @@ class ProfileActivity : AppCompatActivity() {
         btnEditPhoto.visibility = if (enabled) View.VISIBLE else View.GONE
         btnSave.visibility = if (enabled) View.VISIBLE else View.GONE
         btnEditProfile.visibility = if (enabled) View.GONE else View.VISIBLE
-    }
-
-    private val resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val data: Intent? = result.data
-            val imageUri: Uri? = data?.data
-            if (imageUri != null) {
-                val inputStream = contentResolver.openInputStream(imageUri)
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                imgProfile.setImageBitmap(bitmap)
-                uploadImage(bitmap)
-            }
-        }
     }
 
     private fun loadUserData() {
@@ -105,7 +221,7 @@ class ProfileActivity : AppCompatActivity() {
 
     private fun uploadImage(bitmap: Bitmap) {
         val bos = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, bos)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, bos)
         val data = bos.toByteArray()
         profileImageFile = ParseFile("profile.jpg", data)
         profileImageFile?.saveInBackground(SaveCallback { e ->

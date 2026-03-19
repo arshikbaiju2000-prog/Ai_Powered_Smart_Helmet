@@ -11,6 +11,10 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
+        findViewById<LinearLayout>(R.id.llPreferences).setOnClickListener {
+            startActivity(Intent(this, PreferencesActivity::class.java))
+        }
+
         findViewById<LinearLayout>(R.id.llAppearance).setOnClickListener {
             startActivity(Intent(this, AppearanceActivity::class.java))
         }
