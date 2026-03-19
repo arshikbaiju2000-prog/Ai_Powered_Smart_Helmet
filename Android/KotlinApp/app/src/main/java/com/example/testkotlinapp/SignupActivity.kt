@@ -1,6 +1,7 @@
 package com.example.testkotlinapp
 
 import android.os.Bundle
+import android.util.Patterns
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -16,21 +17,29 @@ class SignupActivity : AppCompatActivity() {
 
         val etName = findViewById<EditText>(R.id.etName)
         val etEmail = findViewById<EditText>(R.id.etEmail)
+        val etPhone = findViewById<EditText>(R.id.etPhone)
         val etPassword = findViewById<EditText>(R.id.etPassword)
+        val etConfirmPassword = findViewById<EditText>(R.id.etConfirmPassword)
         val btnSignup = findViewById<Button>(R.id.btnSignup)
         val tvLogin = findViewById<TextView>(R.id.tvLogin)
 
         btnSignup.setOnClickListener {
             val name = etName.text.toString().trim()
             val email = etEmail.text.toString().trim()
+            val phone = etPhone.text.toString().trim()
             val password = etPassword.text.toString().trim()
+            val confirmPassword = etConfirmPassword.text.toString().trim()
 
-            if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()) {
+            if (validateInput(name, email, phone, password, confirmPassword)) {
+                // Implicitly add India country code (+91)
+                val formattedPhone = "+91$phone"
+                
                 val user = ParseUser()
                 user.username = email
-                user.setPassword(password) // Using explicit setter to avoid package-private access error
+                user.setPassword(password)
                 user.email = email
                 user.put("fullName", name)
+                user.put("phoneNumber", formattedPhone)
 
                 user.signUpInBackground { e ->
                     if (e == null) {
@@ -40,13 +49,35 @@ class SignupActivity : AppCompatActivity() {
                         Toast.makeText(this, "Registration Failed: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
-            } else {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
             }
         }
 
         tvLogin.setOnClickListener {
             finish()
         }
+    }
+
+    private fun validateInput(name: String, email: String, phone: String, pass: String, confirmPass: String): Boolean {
+        if (name.isEmpty() || email.isEmpty() || phone.isEmpty() || pass.isEmpty()) {
+            Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            Toast.makeText(this, "Invalid email address", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (phone.length != 10) {
+            Toast.makeText(this, "Phone number must be 10 digits", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (pass.length < 6) {
+            Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (pass != confirmPass) {
+            Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        return true
     }
 }

@@ -39,10 +39,33 @@
         android:background="@android:drawable/edit_text"/>
 
     <EditText
+        android:id="@+id/etPhone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Phone Number (10 digits)"
+        android:inputType="phone"
+        android:maxLength="10"
+        android:layout_marginBottom="16dp"
+        android:padding="12dp"
+        android:autofillHints="phoneNumber"
+        android:background="@android:drawable/edit_text"/>
+
+    <EditText
         android:id="@+id/etPassword"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/password"
+        android:inputType="textPassword"
+        android:layout_marginBottom="16dp"
+        android:padding="12dp"
+        android:autofillHints="password"
+        android:background="@android:drawable/edit_text"/>
+
+    <EditText
+        android:id="@+id/etConfirmPassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Confirm Password"
         android:inputType="textPassword"
         android:layout_marginBottom="24dp"
         android:padding="12dp"
