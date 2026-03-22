@@ -79,7 +79,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:passwordToggleEnabled="true">
+            app:passwordToggleEnabled="true"
+            app:hintEnabled="false">
 
             <EditText
                 android:id="@+id/etPassword"
@@ -98,7 +99,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            app:passwordToggleEnabled="true">
+            app:passwordToggleEnabled="true"
+            app:hintEnabled="false">
 
             <EditText
                 android:id="@+id/etConfirmPassword"

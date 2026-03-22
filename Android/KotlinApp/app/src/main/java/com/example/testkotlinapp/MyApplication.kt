@@ -1,6 +1,8 @@
 package com.example.testkotlinapp
 
 import android.app.Application
+import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate
 import com.parse.Parse
 import com.parse.ParseACL
 import com.parse.ParseObject
@@ -9,6 +11,11 @@ class MyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Apply saved theme preference globally before any activity starts
+        val appPrefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val themeMode = appPrefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        AppCompatDelegate.setDefaultNightMode(themeMode)
 
         // Register Parse subclasses BEFORE initializing
         // Both MyApplication and DeviceLocation are in package com.example.testkotlinapp

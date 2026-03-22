@@ -3,25 +3,36 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?android:attr/windowBackground">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="111dp"
-        android:layout_height="52dp"
-        android:text="Initializing..."
-        android:textAlignment="center"
+    <ImageView
+        android:id="@+id/ivSplashLogo"
+        android:layout_width="210dp"
+        android:layout_height="210dp"
+        android:src="@drawable/helmet_logo"
+        android:alpha="0"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:layout_editor_absoluteY="588dp"
-        tools:ignore="MissingConstraints" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.4"
+        android:contentDescription="Smart Helmet Logo"
+        android:scaleType="fitCenter"
+        tools:src="@drawable/helemt" />
 
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyle"
+    <TextView
+        android:id="@+id/tvAppName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        tools:layout_editor_absoluteX="182dp"
-        tools:layout_editor_absoluteY="337dp"
-        tools:ignore="MissingConstraints" />
+        android:layout_marginTop="24dp"
+        android:text="Smart Helmet"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:alpha="0"
+        android:textColor="?android:attr/textColorPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ivSplashLogo" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
