@@ -1,5 +1,6 @@
 package com.example.testkotlinapp
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -11,6 +12,8 @@ import com.parse.ParseCloud
 import com.parse.ParseUser
 
 class LoginActivity : AppCompatActivity() {
+
+    private lateinit var btnLogin: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,7 +28,7 @@ class LoginActivity : AppCompatActivity() {
 
         val etIdentifier = findViewById<EditText>(R.id.etIdentifier)
         val etPassword = findViewById<EditText>(R.id.etPassword)
-        val btnLogin = findViewById<Button>(R.id.btnLogin)
+        btnLogin = findViewById<Button>(R.id.btnLogin)
         val tvSignup = findViewById<TextView>(R.id.tvSignup)
         val tvForgotPassword = findViewById<TextView>(R.id.tvForgotPassword)
 
@@ -34,6 +37,10 @@ class LoginActivity : AppCompatActivity() {
             val password = etPassword.text.toString().trim()
 
             if (identifier.isNotEmpty() && password.isNotEmpty()) {
+                // Disable button to prevent multiple clicks
+                btnLogin.isEnabled = false
+                btnLogin.text = "Logging in..."
+                
                 if (identifier.contains("@")) {
                     performLogin(identifier, password)
                 } else {
@@ -69,6 +76,8 @@ class LoginActivity : AppCompatActivity() {
             if (e == null && username != null) {
                 performLogin(username, pass)
             } else {
+                btnLogin.isEnabled = true
+                btnLogin.text = "Login"
                 Toast.makeText(this, "User not found: ${e?.message}", Toast.LENGTH_LONG).show()
             }
         }
@@ -79,10 +88,6 @@ class LoginActivity : AppCompatActivity() {
         params["phone"] = phone
         ParseCloud.callFunctionInBackground<String>("getUsernameByPhone", params) { username, e ->
             if (e == null && username != null) {
-                // Log in with temporary session to allow OTP trigger
-                // Note: Standard Parse password reset usually happens via email link,
-                // but we are doing it via custom OTP flow.
-                // We'll pass the email to OTP screen.
                 goToOtpForReset(username)
             } else {
                 Toast.makeText(this, "User not found: ${e?.message}", Toast.LENGTH_LONG).show()
@@ -91,9 +96,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun goToOtpForReset(email: String) {
-        // We'll use a special login or just pass info to Otp activity.
-        // For security, Parse requires a user to be logged in to call most cloud functions.
-        // If it's a "forgot password" flow, we might need a bypass.
         val intent = Intent(this, OtpVerificationActivity::class.java)
         intent.putExtra("isPasswordReset", true)
         intent.putExtra("resetEmail", email)
@@ -103,10 +105,16 @@ class LoginActivity : AppCompatActivity() {
     private fun performLogin(username: String, password: String) {
         ParseUser.logInInBackground(username, password) { _, e ->
             if (e == null) {
+                // Set OTP pending flag
+                val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                prefs.edit().putBoolean("otp_pending", true).apply()
+
                 val intent = Intent(this, OtpVerificationActivity::class.java)
                 startActivity(intent)
                 finish()
             } else {
+                btnLogin.isEnabled = true
+                btnLogin.text = "Login"
                 Toast.makeText(this, "Login Failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }

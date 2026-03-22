@@ -1,5 +1,6 @@
 package com.example.testkotlinapp
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
@@ -12,6 +13,8 @@ import com.parse.ParseUser
 
 class SignupActivity : AppCompatActivity() {
 
+    private lateinit var btnSignup: Button
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_signup)
@@ -22,7 +25,7 @@ class SignupActivity : AppCompatActivity() {
         val etEmergencyContact = findViewById<EditText>(R.id.etEmergencyContact)
         val etPassword = findViewById<EditText>(R.id.etPassword)
         val etConfirmPassword = findViewById<EditText>(R.id.etConfirmPassword)
-        val btnSignup = findViewById<Button>(R.id.btnSignup)
+        btnSignup = findViewById<Button>(R.id.btnSignup)
         val tvLogin = findViewById<TextView>(R.id.tvLogin)
 
         btnSignup.setOnClickListener {
@@ -34,12 +37,13 @@ class SignupActivity : AppCompatActivity() {
             val confirmPassword = etConfirmPassword.text.toString().trim()
 
             if (validateInput(name, email, phone, emergency, password, confirmPassword)) {
+                // Disable button to prevent multiple clicks
+                btnSignup.isEnabled = false
+                btnSignup.text = "Creating Account..."
+
                 val formattedPhone = "+91$phone"
                 val formattedEmergency = "+91$emergency"
                 
-                // We create the user but don't finish yet. 
-                // We will move to OTP first. 
-                // To keep it simple, we'll login the user and then verify.
                 val user = ParseUser()
                 user.username = email
                 user.setPassword(password)
@@ -51,10 +55,15 @@ class SignupActivity : AppCompatActivity() {
                 user.signUpInBackground { e ->
                     if (e == null) {
                         // Registration successful, now MUST verify OTP
+                        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                        prefs.edit().putBoolean("otp_pending", true).apply()
+
                         val intent = Intent(this, OtpVerificationActivity::class.java)
                         startActivity(intent)
                         finish()
                     } else {
+                        btnSignup.isEnabled = true
+                        btnSignup.text = "Sign Up"
                         Toast.makeText(this, "Registration Failed: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }

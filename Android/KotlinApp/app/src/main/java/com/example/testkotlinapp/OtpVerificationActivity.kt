@@ -1,14 +1,18 @@
 package com.example.testkotlinapp
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.parse.ParseCloud
+import com.parse.ParseUser
 
 class OtpVerificationActivity : AppCompatActivity() {
 
@@ -17,11 +21,13 @@ class OtpVerificationActivity : AppCompatActivity() {
     private var countDownTimer: CountDownTimer? = null
     private var isPasswordReset = false
     private var resetEmail: String? = null
+    private lateinit var prefs: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_otp_verification)
 
+        prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         isPasswordReset = intent.getBooleanExtra("isPasswordReset", false)
         resetEmail = intent.getStringExtra("resetEmail")
         
@@ -46,6 +52,17 @@ class OtpVerificationActivity : AppCompatActivity() {
             sendOtp()
             startResendTimer()
         }
+
+        // Handle back press to logout user if they haven't verified OTP
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (!isPasswordReset) {
+                    ParseUser.logOut()
+                    prefs.edit().putBoolean("otp_pending", false).apply()
+                }
+                finish()
+            }
+        })
     }
 
     private fun startResendTimer() {
@@ -99,6 +116,7 @@ class OtpVerificationActivity : AppCompatActivity() {
                     intent.putExtra("otpCode", code) // Pass OTP to reset screen
                     startActivity(intent)
                 } else {
+                    prefs.edit().putBoolean("otp_pending", false).apply()
                     startActivity(Intent(this, MainActivity::class.java))
                 }
                 finish()
