@@ -18,6 +18,7 @@ class OtpVerificationActivity : AppCompatActivity() {
 
     private lateinit var tvTimer: TextView
     private lateinit var btnResend: Button
+    private lateinit var btnVerify: Button
     private var countDownTimer: CountDownTimer? = null
     private var isPasswordReset = false
     private var resetEmail: String? = null
@@ -32,7 +33,7 @@ class OtpVerificationActivity : AppCompatActivity() {
         resetEmail = intent.getStringExtra("resetEmail")
         
         val etOtp = findViewById<EditText>(R.id.etOtp)
-        val btnVerify = findViewById<Button>(R.id.btnVerify)
+        btnVerify = findViewById<Button>(R.id.btnVerify)
         btnResend = findViewById(R.id.btnResend)
         tvTimer = findViewById(R.id.tvTimer)
 
@@ -42,6 +43,7 @@ class OtpVerificationActivity : AppCompatActivity() {
         btnVerify.setOnClickListener {
             val code = etOtp.text.toString().trim()
             if (code.length == 6) {
+                btnVerify.isEnabled = false // Disable button to prevent multiple clicks
                 verifyOtp(code)
             } else {
                 Toast.makeText(this, "Please enter a 6-digit code", Toast.LENGTH_SHORT).show()
@@ -121,6 +123,7 @@ class OtpVerificationActivity : AppCompatActivity() {
                 }
                 finish()
             } else {
+                btnVerify.isEnabled = true // Re-enable button on failure
                 Toast.makeText(this, "Invalid OTP: ${e?.message}", Toast.LENGTH_SHORT).show()
             }
         }
