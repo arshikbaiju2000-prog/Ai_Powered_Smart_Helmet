@@ -14,4 +14,8 @@
     <string name="sign_up">Sign Up</string>
     <string name="already_have_account">Already have an account? Login</string>
     <string name="logout">Logout</string>
+
+    <string name="connect">Connect</string>
+    <string name="connecting">Connecting…</string>
+    <string name="disconnect">Disconnect</string>
 </resources>
