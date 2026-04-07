@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:id="@+id/grp_main">
+        <item
+            android:id="@+id/nav_home"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Home" />
+        <item
+            android:id="@+id/nav_profile"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Profile" />
+        <item
+            android:id="@+id/nav_ride_history"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Ride History" />
+        <item
+            android:id="@+id/nav_incident_log"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Incident Log" />
+        <item
+            android:id="@+id/nav_issue_status"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Issue Status" />
+        <item
+            android:id="@+id/nav_report_issue"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Report An Issue" />
+        <item
+            android:id="@+id/nav_find_my_device"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Find My Device" />
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Settings" />
+    </group>
+
+    <group android:id="@+id/grp_auth">
+        <item
+            android:id="@+id/nav_logout"
+            android:icon="@drawable/ic_launcher_foreground"
+            android:title="Logout" />
+    </group>
+
+</menu>
