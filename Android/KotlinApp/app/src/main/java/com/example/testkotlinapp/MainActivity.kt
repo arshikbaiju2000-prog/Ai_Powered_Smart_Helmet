@@ -73,7 +73,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var toolbar: Toolbar
     private lateinit var recyclerView: RecyclerView
     private lateinit var connectButton: Button
+    private lateinit var fabVoice: com.google.android.material.floatingactionbutton.FloatingActionButton
     private val otherViews = mutableListOf<View>()
+
+    enum class VoiceState { IDLE, RECORDING, WAITING, RESPONSE }
+    private var voiceState = VoiceState.IDLE
+    private val audioHandler = AudioHandler()
+    private val geminiRepository = GeminiRepository()
 
     private lateinit var imageUpdater: ImageUpdater
     private var receiveJob: Job? = null
@@ -149,8 +155,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         val imageView: ImageView = findViewById(R.id.imageView)
         imageView.setImageResource(R.drawable.helemt)
-        
-        otherViews.addAll(listOf(connectButton, imageView, findViewById(R.id.textView3)))
+        fabVoice = findViewById(R.id.fab_voice)
+        otherViews.addAll(listOf(connectButton, imageView, findViewById(R.id.textView3), fabVoice))
 
         imageUpdater = ImageUpdater(this, recyclerView)
         imageUpdater.loadImages()
@@ -171,6 +177,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             } else {
                 performDisconnect()
             }
+        }
+
+        fabVoice.setOnClickListener {
+            handleVoiceButtonClicked()
         }
 
         val filter = IntentFilter("com.example.testkotlinapp.NOISE_CANCEL_CHANGED")
@@ -219,14 +229,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
             }
         }
-        
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION)
         }
-
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.RECORD_AUDIO)
+        }
         if (permissions.isNotEmpty()) {
             isPermissionRequestPending = true
             ActivityCompat.requestPermissions(this, permissions.toTypedArray(), requestAllPermissions)
@@ -519,6 +530,80 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         drawerLayout.addDrawerListener(t); t.syncState(); navigationView.setNavigationItemSelectedListener(this); navigationView.setCheckedItem(R.id.nav_home)
     }
 
+    private fun handleVoiceButtonClicked() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestRequiredPermissions()
+            return
+        }
+
+        when (voiceState) {
+            VoiceState.IDLE, VoiceState.RESPONSE -> startVoiceRecording()
+            VoiceState.RECORDING -> stopVoiceRecordingAndSend()
+            VoiceState.WAITING -> { /* Do nothing while waiting */ }
+        }
+    }
+
+    private fun startVoiceRecording() {
+        voiceState = VoiceState.RECORDING
+        fabVoice.setImageResource(android.R.drawable.ic_media_pause) // Stop icon
+        audioHandler.startRecording(CoroutineScope(Dispatchers.IO))
+        Snackbar.make(findViewById(R.id.main), "Recording started...", Snackbar.LENGTH_SHORT).show()
+    }
+
+    private fun stopVoiceRecordingAndSend() {
+        voiceState = VoiceState.WAITING
+        fabVoice.setImageResource(android.R.drawable.ic_popup_sync) // Spinner/sync icon
+        Snackbar.make(findViewById(R.id.main), "Sending to Gemini...", Snackbar.LENGTH_SHORT).show()
+        
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val pcmData = audioHandler.stopRecordingAndGetPCM()
+                if (pcmData.isEmpty()) {
+                    resetVoiceState()
+                    return@launch
+                }
+                
+                val result = geminiRepository.generateContent(pcmData)
+                if (result.isSuccess) {
+                    val response = result.getOrNull()
+                    if (response != null) {
+                        voiceState = VoiceState.RESPONSE
+                        fabVoice.setImageResource(android.R.drawable.ic_lock_silent_mode_off) // Speaker icon
+                        
+                        if (!response.text.isNullOrEmpty()) {
+                            Snackbar.make(findViewById(R.id.main), response.text, Snackbar.LENGTH_LONG).show()
+                        }
+                        
+                        if (!response.audioPcmBase64.isNullOrEmpty()) {
+                            val audioBytes = android.util.Base64.decode(response.audioPcmBase64, android.util.Base64.NO_WRAP)
+                            withContext(Dispatchers.IO) {
+                                audioHandler.playAudio(audioBytes)
+                                withContext(Dispatchers.Main) {
+                                    resetVoiceState()
+                                }
+                            }
+                        } else {
+                            resetVoiceState()
+                        }
+                    } else {
+                        resetVoiceState()
+                    }
+                } else {
+                    Snackbar.make(findViewById(R.id.main), "Error: ${result.exceptionOrNull()?.message}", Snackbar.LENGTH_LONG).show()
+                    resetVoiceState()
+                }
+            } catch (e: Exception) {
+                Snackbar.make(findViewById(R.id.main), "Error: ${e.message}", Snackbar.LENGTH_LONG).show()
+                resetVoiceState()
+            }
+        }
+    }
+
+    private fun resetVoiceState() {
+        voiceState = VoiceState.IDLE
+        fabVoice.setImageResource(android.R.drawable.ic_btn_speak_now)
+    }
+
     private fun setupNavHeader() { val h = navigationView.getHeaderView(0); h.findViewById<ImageView>(R.id.imgAvatar).setImageResource(R.drawable.ic_launcher_foreground) }
 
     override fun onNavigationItemSelected(i: MenuItem): Boolean {
@@ -538,6 +623,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.id.nav_find_my_device -> startActivity(Intent(this, FindMyDeviceActivity::class.java))
             R.id.nav_issue_status -> startActivity(Intent(this, IssueStatusActivity::class.java))
             R.id.nav_report_issue -> startActivity(Intent(this, ReportIssueActivity::class.java))
+            R.id.nav_gemini -> handleVoiceButtonClicked()
             R.id.nav_logout -> { ParseUser.logOut(); if (isConnected || isBleConnected) performDisconnect(); val intent = Intent(this, LoginActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK }; startActivity(intent); finish() }
         }
         drawerLayout.closeDrawer(GravityCompat.START); return true
